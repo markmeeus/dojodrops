@@ -20,7 +20,7 @@ defmodule DojoDrops.Mixfile do
   def application do
     [
       mod: {DojoDrops.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :elixir_dropbox]
     ]
   end
 
@@ -40,7 +40,9 @@ defmodule DojoDrops.Mixfile do
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:gettext, "~> 0.11"},
-      {:cowboy, "~> 1.0"}
+      {:cowboy, "~> 1.0"},
+      {:elixir_dropbox, "~> 0.0.7"},
+      {:poison, "~> 3.0", override: true}
     ]
   end
 
