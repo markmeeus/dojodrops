@@ -12,7 +12,6 @@ defmodule DojoDropsWeb.DropController do
 
   defp respond_with_content(conn, drop_id, resource) do
     content_fetch = DropServer.get_async(drop_id, resource)
-    conn
-    |> html(content_fetch.())
+    send_resp(conn, 200, content_fetch.())
   end
 end

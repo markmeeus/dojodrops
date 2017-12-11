@@ -8,10 +8,9 @@ defmodule DojoDrops.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
-      # Start the Ecto repository
       supervisor(DojoDrops.Repo, []),
-      # Start the endpoint when the application starts
       supervisor(DojoDropsWeb.Endpoint, []),
+      supervisor(Registry, [:unique, :drop_server_registry])
       # Start your own worker by calling: DojoDrops.Worker.start_link(arg1, arg2, arg3)
       # worker(DojoDrops.Worker, [arg1, arg2, arg3]),
     ]
