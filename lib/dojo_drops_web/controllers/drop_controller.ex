@@ -6,8 +6,8 @@ defmodule DojoDropsWeb.DropController do
     respond_with_content(conn, drop_id, "index.html")
   end
 
-  def resource(conn, %{"drop_id" => drop_id, "resource" => resource}) do
-    respond_with_content(conn, drop_id, resource)
+  def resource(conn, %{"drop_id" => drop_id, "resource_name" => resource_name}) do
+    respond_with_content(conn, drop_id, resource_name)
   end
 
   defp respond_with_content(conn, drop_id, resource) do
@@ -15,6 +15,6 @@ defmodule DojoDropsWeb.DropController do
     extension = List.last String.split(resource, ".")
     conn
     |> put_resp_header("content-type", MIME.type(extension))
-    |> send_resp(200, content_fetch.())
+    |> send_resp(200, content_fetch.().body)
   end
 end

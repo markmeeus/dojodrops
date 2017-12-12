@@ -8,7 +8,7 @@ defmodule DropServer do
     {:ok, %{
       drop_id: drop_id,
       drop_share_url: drop_share_url,
-      cache: %{},
+      resource_server_pids: %{},
       access_token: token,
       client: ElixirDropbox.Client.new(token)}}
   end
@@ -20,15 +20,10 @@ defmodule DropServer do
   end
 
   #genserver callback
-  def handle_call({:get_fetch_fun, resource}, _from, state) do
+  def handle_call({:get_fetch_fun, resource_name}, _from, state) do
     #fetch resource here
-    {content_func, new_state} = lookup_or_create_fetch_fun(state, resource)
+    {content_func, new_state} = lookup_or_create_fetch_fun(state, resource_name)
     {:reply, content_func, new_state}
-  end
-
-  def handle_cast({:update_cache, resource, content_fun}, state) do
-    new_state = %{state | cache: Map.put(state.cache, resource, content_fun) }
-    {:noreply, new_state}
   end
 
   #private funcs
@@ -36,14 +31,18 @@ defmodule DropServer do
     {:via, Registry, {:drop_server_registry, drop_id}}
   end
 
-  defp lookup_or_create_fetch_fun state, resource do
-    new_state = case Map.get(state.cache, resource) do
+  defp lookup_or_create_fetch_fun(state, resource_name) do
+    new_state = case Map.get(state.resource_server_pids, resource_name) do
       nil ->
-        fetch_func =  build_fetch_fun(resource, state)
-        %{state | cache: Map.put(state.cache, resource, fetch_func) }
-      _ -> state
+        {:ok, resource_server} = ResourceServer.start_link(
+          state.access_token, state.drop_share_url, resource_name)
+        new_pids = Map.put(state.resource_server_pids, resource_name, resource_server)
+        %{state | resource_server_pids: new_pids}
+      _pid -> state
     end
-    {new_state.cache[resource], new_state}
+    resource_server_pid = new_state.resource_server_pids[resource_name]
+
+    {fn -> ResourceServer.fetch(resource_server_pid) end, new_state}
   end
 
   def ensure_server(name = {:via, Registry, {:drop_server_registry, drop_id}}) do
@@ -59,25 +58,5 @@ defmodule DropServer do
     GenServer.start_link(__MODULE__, drop_id, name: name)
   end
 
-  @dropbox_content_url "https://content.dropboxapi.com/2/sharing/get_shared_link_file"
 
-  defp build_fetch_fun(resource, state) do
-    fn ->
-      {:ok, dropbox_api_args} = Poison.encode(%{
-        url: state.drop_share_url,
-        path: "/" <> resource
-      })
-
-      headers = [
-        {"Authorization", "Bearer " <> state.access_token},
-        {"Dropbox-API-Arg", dropbox_api_args}
-      ]
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}}
-        = HTTPoison.post @dropbox_content_url, "", headers
-
-      GenServer.cast(via_tuple(state.drop_id), {:update_cache, resource, fn -> body end})
-
-      body
-    end
-  end
 end
