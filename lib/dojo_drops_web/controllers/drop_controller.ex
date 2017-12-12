@@ -12,6 +12,9 @@ defmodule DojoDropsWeb.DropController do
 
   defp respond_with_content(conn, drop_id, resource) do
     content_fetch = DropServer.get_fetch_fun(drop_id, resource)
-    send_resp(conn, 200, content_fetch.())
+    extension = List.last String.split(resource, ".")
+    conn
+    |> put_resp_header("content-type", MIME.type(extension))
+    |> send_resp(200, content_fetch.())
   end
 end

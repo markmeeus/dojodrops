@@ -20,7 +20,7 @@ defmodule DojoDrops.Mixfile do
   def application do
     [
       mod: {DojoDrops.Application, []},
-      extra_applications: [:logger, :runtime_tools, :elixir_dropbox]
+      extra_applications: [:logger, :runtime_tools, :elixir_dropbox, :mime]
     ]
   end
 
@@ -42,7 +42,9 @@ defmodule DojoDrops.Mixfile do
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
       {:elixir_dropbox, "~> 0.0.7"},
-      {:poison, "~> 3.0", override: true}
+      {:httpoison, "~> 0.13.0"},
+      {:poison, "~> 3.0", override: true},
+      {:mime, "~> 1.1"}
     ]
   end
 
