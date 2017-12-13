@@ -3,7 +3,12 @@ defmodule DojoDropsWeb.DropController do
   use DojoDropsWeb, :controller
 
   def home(conn, %{"drop_id" => drop_id}) do
-    respond_with_content(conn, drop_id, "index.html")
+    if String.ends_with?(conn.request_path, "/") do
+      respond_with_content(conn, drop_id, "index.html")
+    else
+      redirect(conn, to: conn.request_path <> "/")
+    end
+
   end
 
   def resource(conn, %{"drop_id" => drop_id, "resource_name" => resource_name}) do
