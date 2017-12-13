@@ -20,7 +20,7 @@ defmodule ResourceServer do
     GenServer.call(pid, {:fetch})
   end
 
-  #genserver callbacks
+  # Genserver callbacks
   def handle_call({:fetch}, _from, state = %{response: response = %HTTPoison.Response{}}) do
     {:reply, response, state}
   end
@@ -30,7 +30,8 @@ defmodule ResourceServer do
     {:reply, new_state.response, new_state}
   end
 
-  def fetch_content(dropbox_access_token, resource_name, dropbox_share_url) do
+  # Private functions
+  defp fetch_content(dropbox_access_token, resource_name, dropbox_share_url) do
     {:ok, dropbox_api_args} = Poison.encode(%{
       url: dropbox_share_url,
       path: "/" <> resource_name
@@ -41,8 +42,9 @@ defmodule ResourceServer do
       {"Dropbox-API-Arg", dropbox_api_args}
     ]
 
-    {:ok, response = %HTTPoison.Response{status_code: 200, body: body}}
+    {:ok, response = %HTTPoison.Response{status_code: 200}}
       = HTTPoison.post @dropbox_content_url, "", headers
+
     response
   end
 end

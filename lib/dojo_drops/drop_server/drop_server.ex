@@ -3,14 +3,15 @@ defmodule DropServer do
 
   def init drop_id do
     token = Application.get_env(:dojo_drops, :dropbox)[:access_token]
-    #following is a stub share url
+    # Following is a stub share url
     drop_share_url = System.get_env("DROPBOX_SHARE_URL")
+    ChangeDetection.start_link(token, drop_share_url)
     {:ok, %{
       drop_id: drop_id,
       drop_share_url: drop_share_url,
       resource_server_pids: %{},
-      access_token: token,
-      client: ElixirDropbox.Client.new(token)}}
+      access_token: token
+    }}
   end
 
   def get_fetch_fun(drop_id, resource) do
@@ -19,14 +20,14 @@ defmodule DropServer do
     |> GenServer.call({:get_fetch_fun, resource})
   end
 
-  #genserver callback
+  # Genserver callbacks
   def handle_call({:get_fetch_fun, resource_name}, _from, state) do
     #fetch resource here
     {content_func, new_state} = lookup_or_create_fetch_fun(state, resource_name)
     {:reply, content_func, new_state}
   end
 
-  #private funcs
+  # Private functions
   defp via_tuple(drop_id) do
     {:via, Registry, {:drop_server_registry, drop_id}}
   end
@@ -45,7 +46,7 @@ defmodule DropServer do
     {fn -> ResourceServer.fetch(resource_server_pid) end, new_state}
   end
 
-  def ensure_server(name = {:via, Registry, {:drop_server_registry, drop_id}}) do
+  defp ensure_server(name = {:via, Registry, {:drop_server_registry, drop_id}}) do
     case Registry.lookup :drop_server_registry, drop_id do
       [] -> #process not found, let's start it
         start_server(name)
@@ -57,6 +58,5 @@ defmodule DropServer do
   defp start_server(name = {:via, Registry, {:drop_server_registry, drop_id}}) do
     GenServer.start_link(__MODULE__, drop_id, name: name)
   end
-
 
 end
