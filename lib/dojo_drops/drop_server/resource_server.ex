@@ -16,11 +16,18 @@ defmodule ResourceServer do
     }}
   end
 
+  def reset(pid) do
+    GenServer.cast(pid, :reset)
+    GenServer.call(pid, {:fetch})
+  end
   def fetch(pid) do
     GenServer.call(pid, {:fetch})
   end
 
   # Genserver callbacks
+  def handle_cast(:reset, state) do
+    {:noreply, Map.delete(state, :response)}
+  end
   def handle_call({:fetch}, _from, state = %{response: response = %HTTPoison.Response{}}) do
     {:reply, response, state}
   end
