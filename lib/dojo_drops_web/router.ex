@@ -18,7 +18,7 @@ defmodule DojoDropsWeb.Router do
 
     get "/", PageController, :index
     get "/:drop_id", DropController, :home
-    get "/:drop_id/:resource_name", DropController, :resource
+    get "/:drop_id/*resource_name", DropController, :resource
   end
 
   # Other scopes may use custom stacks.

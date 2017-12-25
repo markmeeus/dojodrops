@@ -18,23 +18,32 @@ defmodule ResourceServer do
 
   def reset(pid) do
     GenServer.cast(pid, :reset)
-    GenServer.call(pid, {:fetch})
+    #cast fetch, so caller can continue
+    GenServer.cast(pid, :fetch)
   end
   def fetch(pid) do
-    GenServer.call(pid, {:fetch})
+    GenServer.call(pid, :fetch)
   end
 
   # Genserver callbacks
   def handle_cast(:reset, state) do
     {:noreply, Map.delete(state, :response)}
   end
-  def handle_call({:fetch}, _from, state = %{response: response = %HTTPoison.Response{}}) do
-    {:reply, response, state}
+  def handle_cast(:fetch, state) do
+    new_state = fetch_response(state)
+    {:noreply, new_state}
   end
-  def handle_call({:fetch}, _from, state) do
+
+  def handle_call(:fetch, _from, state) do
+    new_state = fetch_response(state)
+    {:reply, new_state.response, new_state}
+  end
+
+  defp fetch_response(state = %{response: %HTTPoison.Response{}}), do: state
+  defp fetch_response(state) do
     new_state = Map.put(state, :response,
       fetch_content(state.dropbox_access_token, state.resource_name, state.dropbox_share_url))
-    {:reply, new_state.response, new_state}
+    new_state
   end
 
   # Private functions

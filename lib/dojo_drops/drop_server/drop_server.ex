@@ -1,3 +1,8 @@
+defmodule DropServer.ChangeListener do
+  @callback global_change(pid, String.t) :: any
+  @callback resource_change(pid, String.t, String.t) :: any
+end
+
 defmodule DropServer do
   use GenServer
   @behaviour ChangeDetectionClient
@@ -11,7 +16,8 @@ defmodule DropServer do
       drop_id: drop_id,
       drop_share_url: drop_share_url,
       resource_server_pids: %{},
-      access_token: token
+      access_token: token,
+      change_listeners: []
     }}
   end
 
@@ -19,6 +25,10 @@ defmodule DropServer do
     via_tuple(drop_id)
     |> ensure_server()
     |> GenServer.call({:get_fetch_fun, resource})
+  end
+
+  def register_for_change(module, pid, drop_id) do
+    GenServer.cast(via_tuple(drop_id), {:register_for_change, module, pid})
   end
   # ChangeDetectionClient callbacks
   def global_change_detected pid do
@@ -35,10 +45,18 @@ defmodule DropServer do
     {:reply, content_func, new_state}
   end
 
+  def handle_cast({:register_for_change, module, pid}, state) do
+    new_state = %{state | change_listeners: [{module, pid} | state.change_listeners]}
+    {:noreply, new_state}
+  end
+
   def handle_cast({:global_change_detected}, state) do
-    Enum.each(state.resource_server_pids, fn {resource_name, pid} ->
+    Enum.each(state.resource_server_pids, fn {_resource_name, pid} ->
       ResourceServer.reset(pid)
     end)
+    Enum.each state.change_listeners, fn {module, pid} ->
+      module.global_change(pid, state.drop_id)
+    end
     {:noreply, state}
   end
 
@@ -48,6 +66,9 @@ defmodule DropServer do
         nil -> nil
         resource_server_pid ->
           ResourceServer.reset(resource_server_pid)
+      end
+      Enum.each state.change_listeners, fn {module, pid} ->
+        module.resource_change(pid, state.drop_id, resource_name)
       end
     end)
     {:noreply, state}
@@ -84,5 +105,4 @@ defmodule DropServer do
   defp start_server(name = {:via, Registry, {:drop_server_registry, drop_id}}) do
     GenServer.start_link(__MODULE__, drop_id, name: name)
   end
-
 end
