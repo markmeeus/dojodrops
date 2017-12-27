@@ -5,102 +5,57 @@ end
 
 defmodule ChangeDetection do
 
-  @dropbox_get_latest_cursor_url "https://api.dropboxapi.com/2/files/list_folder/get_latest_cursor"
-  @dropbox_list_folder_continue_cursor_url "https://api.dropboxapi.com/2/files/list_folder/continue"
-  @dropbox_longpoll_url "https://notify.dropboxapi.com/2/files/list_folder/longpoll"
-
-
   use GenServer
 
   def start_link(client_module, client_pid, dropbox_access_token, dropbox_share_url) do
+    {:ok, dropbox_client} = DropBox.Client.start_link(dropbox_access_token)
     GenServer.start_link(__MODULE__,
-      {client_module, client_pid, dropbox_access_token, dropbox_share_url})
+      {client_module, client_pid, dropbox_client, dropbox_share_url})
   end
 
   # genserver callbacks
-  def init {client_module, client_pid, dropbox_access_token, dropbox_share_url} do
+  def init {client_module, client_pid, dropbox_client, dropbox_share_url} do
     GenServer.cast(self(), :init_poll)
     GenServer.cast(self(), :poll)
 
     {:ok, %{
       client_module: client_module,
       client_pid: client_pid,
-      dropbox_access_token: dropbox_access_token,
+      dropbox_client: dropbox_client,
       dropbox_share_url: dropbox_share_url
     }}
   end
 
   def handle_cast(:init_poll, state) do
-    cursor = get_latest_cursor(state.dropbox_access_token, state.dropbox_share_url)
+    cursor = get_latest_cursor(state.dropbox_client, state.dropbox_share_url)
     {:noreply, Map.put(state, :cursor, cursor)}
   end
 
   def handle_cast(:get_changes, state) do
 
-    {cursor, entries} = get_changes(state.dropbox_access_token, state.cursor)
+    {cursor, entries} = get_changes(state.dropbox_client, state.cursor)
     on_change(state, entries)
 
     {:noreply, Map.put(state, :cursor, cursor)}
   end
 
   def handle_cast(:poll, state) do
-    poll(state.dropbox_access_token, state.cursor)
+    poll(state.dropbox_client, state.cursor)
     {:noreply, state}
   end
 
   # private functions
-  defp get_latest_cursor(dropbox_access_token, dropbox_share_url) do
-    headers = [
-      {"Content-Type", "application/json"},
-      {"Authorization", "Bearer " <> dropbox_access_token}
-    ]
-
-    payload = %{
-      shared_link: %{url: dropbox_share_url},
-      path: ""
-    }
-
-    dropbox_api_post(
-      @dropbox_get_latest_cursor_url,
-      headers,
-      payload)["cursor"]
+  defp get_latest_cursor(dropbox_client, dropbox_share_url) do
+    DropBox.Client.get_latest_cursor(dropbox_client, dropbox_share_url)
   end
 
-  defp get_changes(dropbox_access_token, cursor) do
-    headers = [
-      {"Content-Type", "application/json"},
-      {"Authorization", "Bearer " <> dropbox_access_token}
-    ]
+  defp get_changes(dropbox_client, cursor) do
+    DropBox.Client.get_changes(dropbox_client, cursor)
 
-    payload = %{
-      cursor: cursor
-    }
-
-    result = %{"cursor" => cursor, "entries" => entries} = dropbox_api_post(
-      @dropbox_list_folder_continue_cursor_url,
-      headers,
-      payload)
-    {cursor, Enum.map(entries, &(String.downcase(&1["name"])))}
   end
 
-
-
-  defp poll(dropbox_access_token, cursor) do
-    headers = [
-      {"Content-Type", "application/json"},
-    ]
-
-    payload = %{
-      cursor: cursor,
-      timeout: 30
-    }
-
-    response = dropbox_api_post(
-      @dropbox_longpoll_url,
-      headers,
-      payload,
-      recv_timeout: 60 * 1000)
-
+  defp poll(dropbox_client, cursor) do
+    response = DropBox.Client.poll(dropbox_client, cursor)
     if response["changes"] do
       #on_change()
       # Refetch latest cursor, and poll again
@@ -108,15 +63,6 @@ defmodule ChangeDetection do
     end
     #start polling
     GenServer.cast(self(), :poll)
-  end
-
-  defp dropbox_api_post(url, headers, payload, options \\ []) do
-    {:ok, body} = Poison.encode(payload)
-
-    {:ok, %HTTPoison.Response{status_code: 200, body: response_body}}
-      = HTTPoison.post(url, body, headers, options)
-
-    Poison.decode!(response_body)
   end
 
   defp on_change(state, []) do

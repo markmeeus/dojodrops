@@ -9,8 +9,9 @@ defmodule ResourceServer do
       {dropbox_access_token, dropbox_share_url, resource_name})
   end
   def init({dropbox_access_token, dropbox_share_url, resource_name}) do
+    {:ok, dropbox_client} = DropBox.Client.start_link(dropbox_access_token)
     {:ok, %{
-      dropbox_access_token: dropbox_access_token,
+      dropbox_client: dropbox_client,
       dropbox_share_url: dropbox_share_url,
       resource_name: resource_name
     }}
@@ -41,26 +42,9 @@ defmodule ResourceServer do
 
   defp fetch_response(state = %{response: %HTTPoison.Response{}}), do: state
   defp fetch_response(state) do
-    new_state = Map.put(state, :response,
-      fetch_content(state.dropbox_access_token, state.resource_name, state.dropbox_share_url))
+    content = DropBox.Client.get_shared_link_file(
+      state.dropbox_client, state.dropbox_share_url, state.resource_name)
+    new_state = Map.put(state, :response, content)
     new_state
-  end
-
-  # Private functions
-  defp fetch_content(dropbox_access_token, resource_name, dropbox_share_url) do
-    {:ok, dropbox_api_args} = Poison.encode(%{
-      url: dropbox_share_url,
-      path: "/" <> resource_name
-    })
-
-    headers = [
-      {"Authorization", "Bearer " <> dropbox_access_token},
-      {"Dropbox-API-Arg", dropbox_api_args}
-    ]
-
-    {:ok, response = %HTTPoison.Response{status_code: 200}}
-      = HTTPoison.post @dropbox_content_url, "", headers
-
-    response
   end
 end
