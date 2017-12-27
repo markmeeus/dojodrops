@@ -10,7 +10,8 @@ defmodule DojoDrops.Application do
     children = [
       supervisor(DojoDrops.Repo, []),
       supervisor(DojoDropsWeb.Endpoint, []),
-      supervisor(Registry, [:unique, :drop_server_registry])
+      supervisor(Registry, [:unique, :drop_server_registry]),
+      supervisor(DropRegistry, [])
       # Start your own worker by calling: DojoDrops.Worker.start_link(arg1, arg2, arg3)
       # worker(DojoDrops.Worker, [arg1, arg2, arg3]),
     ]

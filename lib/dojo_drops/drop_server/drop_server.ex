@@ -7,10 +7,9 @@ defmodule DropServer do
   use GenServer
   @behaviour ChangeDetectionClient
 
-  def init drop_id do
+  def init {drop_id, drop_share_url} do
     token = Application.get_env(:dojo_drops, :dropbox)[:access_token]
     # Following is a stub share url
-    drop_share_url = System.get_env("DROPBOX_SHARE_URL")
     ChangeDetection.start_link(__MODULE__, self(), token, drop_share_url)
     {:ok, %{
       drop_id: drop_id,
@@ -96,13 +95,17 @@ defmodule DropServer do
   defp ensure_server(name = {:via, Registry, {:drop_server_registry, drop_id}}) do
     case Registry.lookup :drop_server_registry, drop_id do
       [] -> #process not found, let's start it
-        start_server(name)
+        case DropRegistry.get_share_url_for_drop_id(drop_id) do
+          nil -> nil
+          share_url -> start_server(name, share_url)
+        end
+
       _ -> nil
     end
     name
   end
 
-  defp start_server(name = {:via, Registry, {:drop_server_registry, drop_id}}) do
-    GenServer.start_link(__MODULE__, drop_id, name: name)
+  defp start_server(name = {:via, Registry, {:drop_server_registry, drop_id}}, share_url) do
+    GenServer.start_link(__MODULE__, {drop_id, share_url}, name: name)
   end
 end

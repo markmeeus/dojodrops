@@ -1,0 +1,39 @@
+defmodule DropRegistry do
+  use GenServer
+
+  def start_link() do
+    GenServer.start_link(__MODULE__, nil, name: :drop_registry)
+  end
+
+  def refresh() do
+    GenServer.cast(:drop_registry, :refresh)
+  end
+
+  def get_share_url_for_drop_id(drop_id) do
+    GenServer.call(:drop_registry, {:get_share_url_for_drop_id, drop_id})
+  end
+
+  def init(nil) do
+    token = Application.get_env(:dojo_drops, :dropbox)[:access_token]
+    {:ok, dropbox_client} = DropBox.Client.start_link(token)
+    # Following is a stub share url
+    share_url = System.get_env("DROPBOX_SHARE_URL")
+    DropRegistry.refresh()
+    {:ok, %{token: token, share_url: share_url, dropbox_client: dropbox_client}}
+  end
+
+  #genserver callbacks
+  def handle_cast(:refresh, state) do
+    data = state.dropbox_client
+    |> DropBox.Client.get_shared_link_file(state.share_url, "registry.json")
+    |> Map.get(:body)
+    |> Poison.decode!()
+
+    newState = Map.put(state, :data, data)
+    {:noreply, newState}
+  end
+
+  def handle_call({:get_share_url_for_drop_id, drop_id}, _from, state) do
+    {:reply, Map.get(state.data, drop_id), state}
+  end
+end
