@@ -1,4 +1,6 @@
 defmodule DropRegistry do
+
+  @behaviour ChangeDetectionClient
   use GenServer
 
   def start_link() do
@@ -16,10 +18,20 @@ defmodule DropRegistry do
   def init(nil) do
     token = Application.get_env(:dojo_drops, :dropbox)[:access_token]
     {:ok, dropbox_client} = DropBox.Client.start_link(token)
-    # Following is a stub share url
+
     share_url = System.get_env("DROPBOX_SHARE_URL")
+    ChangeDetection.start_link(__MODULE__, self(), token, share_url)
+
     DropRegistry.refresh()
     {:ok, %{token: token, share_url: share_url, dropbox_client: dropbox_client}}
+  end
+
+  # ChangeDetectionClient callbacks
+  def global_change_detected pid do
+    DropRegistry.refresh()
+  end
+  def resource_change_detected pid, resource_names do
+    DropRegistry.refresh()
   end
 
   #genserver callbacks
