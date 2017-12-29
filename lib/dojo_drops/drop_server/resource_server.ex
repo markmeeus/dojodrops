@@ -28,23 +28,23 @@ defmodule ResourceServer do
 
   # Genserver callbacks
   def handle_cast(:reset, state) do
-    {:noreply, Map.delete(state, :response)}
+    {:noreply, Map.delete(state, :resource)}
   end
   def handle_cast(:fetch, state) do
-    new_state = fetch_response(state)
+    new_state = fetch_resource(state)
     {:noreply, new_state}
   end
 
   def handle_call(:fetch, _from, state) do
-    new_state = fetch_response(state)
-    {:reply, new_state.response, new_state}
+    new_state = fetch_resource(state)
+    {:reply, new_state.resource, new_state}
   end
 
-  defp fetch_response(state = %{response: %HTTPoison.Response{}}), do: state
-  defp fetch_response(state) do
-    content = DropBox.Client.get_shared_link_file(
+  defp fetch_resource(state = %{resource: resource}), do: state
+  defp fetch_resource(state) do
+    resource = DropBox.Client.get_shared_link_file(
       state.dropbox_client, state.dropbox_share_url, state.resource_name)
-    new_state = Map.put(state, :response, content)
+    new_state = Map.put(state, :resource, resource)
     new_state
   end
 end

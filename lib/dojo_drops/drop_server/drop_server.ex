@@ -9,7 +9,6 @@ defmodule DropServer do
 
   def init {drop_id, drop_share_url} do
     token = Application.get_env(:dojo_drops, :dropbox)[:access_token]
-    # Following is a stub share url
     ChangeDetection.start_link(__MODULE__, self(), token, drop_share_url)
     {:ok, %{
       drop_id: drop_id,

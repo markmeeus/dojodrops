@@ -42,10 +42,23 @@ defmodule DropBox.Client do
       {"Dropbox-API-Arg", api_args}
     ]
 
-    {:ok, response = %HTTPoison.Response{status_code: 200}}
-      = HTTPoison.post @content_url, "", headers
+    respond_from_409 = fn response ->
+      data = Poison.decode!(response.body)
+      if(Map.get(data, "error") && Map.get(data["error"], ".tag")
+        && data["error"][".tag"] == "shared_link_not_found") do
+        {:not_found, response}
+      else
+        {:failed, nil}
+      end
+    end
 
-    {:reply, response, state};
+    case HTTPoison.post(@content_url, "", headers) do
+      {:ok, response = %HTTPoison.Response{status_code: 200}}
+        ->  {:reply, {:ok, response}, state}
+      {:ok, response = %HTTPoison.Response{status_code: 409}}
+        -> {:reply, respond_from_409.(response), state}
+      resp -> {:reply, {:failed, nil}, state}
+    end
   end
 
   def handle_call({:get_latest_cursor, share_url}, _sender, state = %{access_token: access_token}) do

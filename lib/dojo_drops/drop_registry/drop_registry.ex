@@ -36,8 +36,10 @@ defmodule DropRegistry do
 
   #genserver callbacks
   def handle_cast(:refresh, state) do
-    data = state.dropbox_client
+    {:ok, response} = state.dropbox_client
     |> DropBox.Client.get_shared_link_file(state.share_url, "registry.json")
+
+    data = response
     |> Map.get(:body)
     |> Poison.decode!()
 
