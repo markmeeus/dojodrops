@@ -20,23 +20,18 @@ defmodule DojoDropsWeb.DropController do
     extension = List.last String.split(resource_name, ".")
     {status, content} = content_fetch.()
 
-    status_code = case status do
-      :ok -> 200
-      :not_found -> 404
-      _ -> 500
-    end
-
-    resp_content = case status do
-      :ok -> content.body
-      :not_found -> 'Oooops, this page appears to be missing.'
-      _ -> "#{to_string(status)}"
+    {status_code, resp_content, content_type} = case status do
+      :ok -> {200, content.body, MIME.type(extension)}
+      :too_large -> {409, "Content is too large", "text/html"}
+      :not_found -> {404, "Oooops, this page appears to be missing.", "text/html"}
+      _ -> {500, "An error occured", "text/html"}
     end
 
     conn
     |> assign(:drop_id, drop_id)
     |> assign(:resource_name, resource_name)
     # |> html("<html><body>hallo</body></html>")
-    |> put_resp_header("content-type", MIME.type(extension))
+    |> put_resp_header("content-type", content_type)
     |> send_resp(status_code, resp_content)
   end
 
