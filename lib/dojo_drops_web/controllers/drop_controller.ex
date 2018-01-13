@@ -15,7 +15,10 @@ defmodule DojoDropsWeb.DropController do
   end
 
   defp respond_with_content(conn, drop_id, path) do
-    resource_name = create_resource_name(path)
+    resource_name = path
+    |> stringify_path()
+    |> String.downcase()
+
     content_fetch = DropServer.get_fetch_fun(drop_id, resource_name)
     extension = List.last String.split(resource_name, ".")
     {status, content} = content_fetch.()
@@ -35,8 +38,6 @@ defmodule DojoDropsWeb.DropController do
     |> send_resp(status_code, resp_content)
   end
 
-  def create_resource_name(path) when is_list(path), do: Enum.join(path, "/")
-  def create_resource_name(path) do
-    path
-  end
+  def stringify_path(path) when is_list(path), do: Enum.join(path, "/")
+  def stringify_path(path), do: path
 end
