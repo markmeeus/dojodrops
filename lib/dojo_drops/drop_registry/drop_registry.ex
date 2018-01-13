@@ -1,5 +1,7 @@
 defmodule DropRegistry do
 
+  @initialization_delay 5000
+
   @behaviour ChangeDetectionClient
   use GenServer
 
@@ -18,11 +20,10 @@ defmodule DropRegistry do
   def init(nil) do
     token = Application.get_env(:dojo_drops, :dropbox)[:access_token]
     {:ok, dropbox_client} = DropBox.Client.start_link(token)
-
     share_url = System.get_env("DROPBOX_SHARE_URL")
-    ChangeDetection.start_link(__MODULE__, self(), token, share_url)
 
-    DropRegistry.refresh()
+    Process.send_after(self(), :init_dropbox, @initialization_delay)
+
     {:ok, %{token: token, share_url: share_url, dropbox_client: dropbox_client}}
   end
 
@@ -49,5 +50,11 @@ defmodule DropRegistry do
 
   def handle_call({:get_share_url_for_drop_id, drop_id}, _from, state) do
     {:reply, Map.get(state.data, drop_id), state}
+  end
+
+  def handle_info(:init_dropbox, state) do
+    ChangeDetection.start_link(__MODULE__, self(), state.token, state.share_url)
+    DropRegistry.refresh()
+    {:noreply, state}
   end
 end
