@@ -33,7 +33,6 @@ defmodule DojoDropsWeb.DropController do
     conn
     |> assign(:drop_id, drop_id)
     |> assign(:resource_name, resource_name)
-    # |> html("<html><body>hallo</body></html>")
     |> put_resp_header("content-type", content_type)
     |> send_resp(status_code, resp_content)
   end
