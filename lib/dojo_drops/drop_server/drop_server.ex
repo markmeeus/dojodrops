@@ -15,7 +15,7 @@ defmodule DropServer do
       drop_share_url: drop_share_url,
       resource_server_pids: %{},
       access_token: token,
-      change_listeners: []
+      change_listeners: %{}
     }}
   end
 
@@ -44,15 +44,16 @@ defmodule DropServer do
   end
 
   def handle_cast({:register_for_change, module, pid}, state) do
-    new_state = %{state | change_listeners: [{module, pid} | state.change_listeners]}
-    {:noreply, new_state}
+    Process.monitor(pid)
+    new_change_listeners = Map.put(state.change_listeners, pid, {module, pid})
+    {:noreply, %{state | change_listeners: new_change_listeners}}
   end
 
   def handle_cast({:global_change_detected}, state) do
     Enum.each(state.resource_server_pids, fn {_resource_name, pid} ->
       ResourceServer.reset(pid)
     end)
-    Enum.each state.change_listeners, fn {module, pid} ->
+    Enum.each state.change_listeners, fn {pid, {module, pid}} ->
       module.global_change(pid, state.drop_id)
     end
     {:noreply, state}
@@ -65,11 +66,16 @@ defmodule DropServer do
         resource_server_pid ->
           ResourceServer.reset(resource_server_pid)
       end
-      Enum.each state.change_listeners, fn {module, pid} ->
+      Enum.each state.change_listeners, fn {pid, {module, pid}} ->
         module.resource_change(pid, state.drop_id, resource_name)
       end
     end)
     {:noreply, state}
+  end
+
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
+    new_change_listeners = Map.delete(state.change_listeners, pid)
+    {:noreply, %{state | change_listeners: new_change_listeners}}
   end
 
   # Private functions
