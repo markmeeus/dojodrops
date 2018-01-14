@@ -10,6 +10,7 @@ defmodule DropServer do
   def init {drop_id, drop_share_url} do
     token = Application.get_env(:dojo_drops, :dropbox)[:access_token]
     ChangeDetection.start_link(__MODULE__, self(), token, drop_share_url)
+
     {:ok, %{
       drop_id: drop_id,
       drop_share_url: drop_share_url,
@@ -19,10 +20,11 @@ defmodule DropServer do
     }}
   end
 
-  def get_fetch_fun(drop_id, resource) do
-    via_tuple(drop_id)
+  def get_content(drop_id, resource) do
+    fetch_fun = via_tuple(drop_id)
     |> ensure_server()
     |> GenServer.call({:get_fetch_fun, resource})
+    fetch_fun.()
   end
 
   def register_for_change(module, pid, drop_id) do
