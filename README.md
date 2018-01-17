@@ -1,9 +1,24 @@
 # DojoDrops
+Serves static websites pages from a DropBox shared folder url.
 
-Experimental work in progress.
+This project is built to be used in CoderDojo-like environments, where kids want to experiment with html/css/javascript.
+Students can edit their sourcefiles on their local filesystem, DropBox stores it in the cloud, and dojodrops picks it up and serves it to the internet.
 
-The goal is to make an easy tool for participants of our local coderdojo to serve small websites straight from dropbox.
+Sites can be protected with basic authentication too.
 
-Participants will be able to register a shared folder by it's url. The content of that folder will be served under a rootpath which is specified during the registration.
+The DropBox api for fetching content tends to be a bit slow, DojoDrops caches the content in memory so it can be served quickly, content will be refreshed when DropBox syncs new content.
 
-DojoDrops will load the content of smaller files (html, css, js) in memory and keep it in sync with dropbox. Requests for larger files will be redirected to a direct download url.
+To avoid a single user taking down the server, DojoDrops does not serve files over 256KB. It will instead return a 409.
+
+I have plans to add a more fair and configurable quota system later on. 
+
+## Installing
+
+TODO
+
+## Configuring
+
+TODO
+
+
+
