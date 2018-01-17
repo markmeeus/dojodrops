@@ -4,22 +4,18 @@ defmodule DojoDropsWeb.LiveReloader do
 
   @behaviour Plug
 
-  reload_path  = Application.app_dir(:dojo_drops, "priv/static/js/app.js")
-  @external_resource reload_path
-  @live_reload_js File.read!(reload_path)
-
   def init(opts) do
     opts
   end
 
-  def call(%Plug.Conn{path_info: ["__live_reload", "frame", drop_id]} = conn , _) do
+  def call(%Plug.Conn{path_info: ["__live_reload", "frame", drop_id | _]} = conn , _) do
     conn
     |> put_resp_content_type("text/html")
     |> send_resp(200, """
       <html><body>
       <script>
         document.liveReloadChannel='live_reload:#{drop_id}';
-        #{@live_reload_js}
+        #{live_reload_script()}
       </script>
       </body></html>
     """)
@@ -64,5 +60,10 @@ defmodule DojoDropsWeb.LiveReloader do
     """
     <iframe src="#{path}" style="display: none;"></iframe>
     """
+  end
+
+  defp live_reload_script do
+    Application.app_dir(:dojo_drops, "priv/static/js/app.js")
+    |> File.read!()
   end
 end

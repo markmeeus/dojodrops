@@ -44,7 +44,8 @@ defmodule DojoDrops.Mixfile do
       {:elixir_dropbox, "~> 0.0.7"},
       {:httpoison, "~> 0.13.0"},
       {:poison, "~> 3.0", override: true},
-      {:mime, "~> 1.1"}
+      {:mime, "~> 1.1"},
+      {:distillery, "~> 1.0.0"}
     ]
   end
 
