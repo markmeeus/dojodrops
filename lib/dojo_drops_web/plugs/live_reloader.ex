@@ -12,7 +12,7 @@ defmodule DojoDropsWeb.LiveReloader do
     opts
   end
 
-  def call(%Plug.Conn{path_info: ["__live_reload", "frame", drop_id | resource_name]} = conn , _) do
+  def call(%Plug.Conn{path_info: ["__live_reload", "frame", drop_id]} = conn , _) do
     conn
     |> put_resp_content_type("text/html")
     |> send_resp(200, """

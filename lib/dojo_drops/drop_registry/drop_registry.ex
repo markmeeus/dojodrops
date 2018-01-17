@@ -28,10 +28,10 @@ defmodule DropRegistry do
   end
 
   # ChangeDetectionClient callbacks
-  def global_change_detected pid do
+  def global_change_detected _pid do
     DropRegistry.refresh()
   end
-  def resource_change_detected pid, resource_names do
+  def resource_change_detected _pid, _resource_names do
     DropRegistry.refresh()
   end
 

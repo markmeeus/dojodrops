@@ -13,8 +13,8 @@ defmodule DojoDropsWeb.DropController do
     end
   end
 
-  #blocks access to confif folder
-  def resource(conn, %{"drop_id" => drop_id, "resource_name" => ["config", _]}) do
+  #blocks access to config folder
+  def resource(conn, %{"resource_name" => ["config", _]}) do
     send_resp(conn, 404, @content_not_found)
   end
   def resource(conn, %{"drop_id" => drop_id, "resource_name" => resource_name}) do
@@ -54,7 +54,7 @@ defmodule DojoDropsWeb.DropController do
 
   defp access_allowed(conn, drop_id) do
     case DropServer.get_content(drop_id, "config/users.txt") do
-      {:not_found, users} -> true
+      {:not_found, _} -> true
       {:ok, users} -> conn
         |> get_req_header("authorization")
         |> credentials_match?(users)

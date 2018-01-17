@@ -1,6 +1,5 @@
 defmodule ResourceServer do
 
-  @dropbox_content_url "https://content.dropboxapi.com/2/sharing/get_shared_link_file"
   @max_content_length 256 * 1024 #256KB max content size
 
   use GenServer
@@ -41,7 +40,7 @@ defmodule ResourceServer do
     {:reply, new_state.resource, new_state}
   end
 
-  defp fetch_resource(state = %{resource: resource}), do: state
+  defp fetch_resource(state = %{resource: _}), do: state
   defp fetch_resource(state) do
     resource = {status, request} = DropBox.Client.get_shared_link_file(
       state.dropbox_client, state.dropbox_share_url, state.resource_name)
@@ -64,8 +63,4 @@ defmodule ResourceServer do
       end)
     String.to_integer(header_val)
   end
-
-  defp is_content_length_header({"Content-Length", _}), do: true
-  defp is_content_length_header(_), do: false
-
 end

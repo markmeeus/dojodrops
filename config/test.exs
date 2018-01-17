@@ -8,12 +8,3 @@ config :dojo_drops, DojoDropsWeb.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
-
-# Configure your database
-config :dojo_drops, DojoDrops.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "postgres",
-  database: "dojo_drops_test",
-  hostname: "localhost",
-  pool: Ecto.Adapters.SQL.Sandbox

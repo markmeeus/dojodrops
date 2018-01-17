@@ -8,7 +8,6 @@ defmodule DojoDrops.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
-      supervisor(DojoDrops.Repo, []),
       supervisor(DojoDropsWeb.Endpoint, []),
       supervisor(Registry, [:unique, :drop_server_registry]),
       supervisor(DropRegistry, [])

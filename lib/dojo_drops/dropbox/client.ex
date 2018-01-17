@@ -57,7 +57,7 @@ defmodule DropBox.Client do
         ->  {:reply, {:ok, response}, state}
       {:ok, response = %HTTPoison.Response{status_code: 409}}
         -> {:reply, respond_from_409.(response), state}
-      resp -> {:reply, {:failed, nil}, state}
+      _ -> {:reply, {:failed, nil}, state}
     end
   end
 
@@ -89,7 +89,7 @@ defmodule DropBox.Client do
       cursor: cursor
     }
 
-    result = %{"cursor" => cursor, "entries" => entries} = api_post(
+    %{"cursor" => cursor, "entries" => entries} = api_post(
       @list_folder_continue_cursor_url,
       headers,
       payload)
