@@ -22,6 +22,8 @@ config :dojo_drops, DojoDropsWeb.Endpoint,
 # Do not print debug messages in production
 config :logger, level: :info
 
+config :dojo_drops, :dropbox, access_token: "${DROPBOX_TOKEN}"
+
 config :dojo_drops, DojoDropsWeb.Endpoint,
   secret_key_base: "${SECRET_KEY_BASE}"
 
