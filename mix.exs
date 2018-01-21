@@ -20,7 +20,7 @@ defmodule DojoDrops.Mixfile do
   def application do
     [
       mod: {DojoDrops.Application, []},
-      extra_applications: [:logger, :runtime_tools, :elixir_dropbox, :mime]
+      extra_applications: [:logger, :runtime_tools, :elixir_dropbox, :mime, :ssl]
     ]
   end
 

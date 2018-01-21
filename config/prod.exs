@@ -17,8 +17,12 @@ config :dojo_drops, DojoDropsWeb.Endpoint,
   server: true,
   load_from_system_env: true,
   url: [host: "${HOST_NAME}", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json"
-
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  force_ssl: [rewrite_on: [:x_forwarded_proto]],
+  https: [port: 4443,
+    keyfile: "${SSL_KEY}",
+    certfile: "${SSL_CERT}"
+  ]
 # Do not print debug messages in production
 config :logger, level: :info
 

@@ -23,7 +23,9 @@ RUN cd assets \
 
 RUN mix phx.digest \
   && MIX_ENV=prod mix do compile, release --verbose --env=prod \
+  && chown -R elixir_user:root /app
 
 USER elixir_user
 EXPOSE 4000
+EXPOSE 4443
 CMD ["/app/_build/prod/rel/dojo_drops/bin/dojo_drops", "foreground"]
