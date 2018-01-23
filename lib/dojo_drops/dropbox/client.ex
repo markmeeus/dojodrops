@@ -41,12 +41,13 @@ defmodule DropBox.Client do
       {"Authorization", "Bearer " <> access_token},
       {"Dropbox-API-Arg", api_args}
     ]
-
     respond_from_409 = fn response ->
       data = Poison.decode!(response.body)
-      if(Map.get(data, "error") && Map.get(data["error"], ".tag")
-        && data["error"][".tag"] == "shared_link_not_found") do
-        {:not_found, response}
+      if(Map.get(data, "error") && Map.get(data["error"], ".tag")) do
+        case data["error"][".tag"] do
+          "shared_link_not_found" -> {:not_found, response}
+          "shared_link_is_directory" -> {:is_directory, response}
+        end
       else
         {:failed, nil}
       end

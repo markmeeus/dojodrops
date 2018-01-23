@@ -21,10 +21,12 @@ defmodule DropServer do
   end
 
   def get_content(drop_id, resource) do
-    fetch_fun = via_tuple(drop_id)
-    |> ensure_server()
-    |> GenServer.call({:get_fetch_fun, resource})
-    fetch_fun.()
+    drop_server_name = via_tuple(drop_id)
+    if(ensure_server(drop_server_name)) do
+       GenServer.call(drop_server_name, {:get_fetch_fun, resource}).()
+    else
+      {:not_found, nil}
+    end
   end
 
   def register_for_change(module, pid, drop_id) do
@@ -106,10 +108,9 @@ defmodule DropServer do
           nil -> nil
           share_url -> start_server(name, share_url)
         end
-
-      _ -> nil
+      pid -> pid
     end
-    name
+
   end
 
   defp start_server(name = {:via, Registry, {:drop_server_registry, drop_id}}, share_url) do

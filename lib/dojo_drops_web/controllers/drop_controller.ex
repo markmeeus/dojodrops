@@ -7,7 +7,7 @@ defmodule DojoDropsWeb.DropController do
 
   def home(conn, %{"drop_id" => drop_id}) do
     if String.ends_with?(conn.request_path, "/") do
-      respond_with_content(conn, drop_id, "index.html")
+      respond_to_resource_request(conn, drop_id, "index.html")
     else
       redirect(conn, to: conn.request_path <> "/")
     end
@@ -18,6 +18,10 @@ defmodule DojoDropsWeb.DropController do
     send_resp(conn, 404, @content_not_found)
   end
   def resource(conn, %{"drop_id" => drop_id, "resource_name" => resource_name}) do
+    respond_to_resource_request(conn, drop_id, resource_name)
+  end
+
+  defp respond_to_resource_request(conn, drop_id, resource_name) do
     if(access_allowed(conn, drop_id)) do
       respond_with_content(conn, drop_id, resource_name)
     else
@@ -39,6 +43,7 @@ defmodule DojoDropsWeb.DropController do
       :ok -> {200, content.body, MIME.type(extension)}
       :too_large -> {409, @content_too_large, "text/html"}
       :not_found -> {404, @content_not_found, "text/html"}
+      :is_directory -> respond_with_content(conn, drop_id, "#{resource_name}/index.html")
       _ -> {500, "An error occured", "text/html"}
     end
 
