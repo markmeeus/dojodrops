@@ -84,7 +84,7 @@ defmodule DropServer do
 
   # Private functions
   defp via_tuple(drop_id) do
-    {:via, Registry, {:drop_server_registry, drop_id}}
+    {:via, Registry, {:drop_server_registry, String.downcase(drop_id)}}
   end
 
   defp lookup_or_create_fetch_fun(state, resource_name) do
